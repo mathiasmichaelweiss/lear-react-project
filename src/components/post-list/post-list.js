@@ -1,8 +1,9 @@
 import React from 'react';
-
+import { ListGroup } from 'reactstrap';
+import '../post-list/post-list.css';
 import PostListItem from '../post-list-item';
 
-const PostList = ({ posts }) => {
+const PostList = ({ posts, onDelete }) => {
 
     const elements = posts.map((item) => {
         return (
@@ -11,15 +12,16 @@ const PostList = ({ posts }) => {
                 <PostListItem
                     label={item.label}
                     important={item.important}
+                    onDelete={() => onDelete(item.id)}
                 />
             </li>
         )
     });
 
     return (
-        <ul className="app-list list-group">
+        <ListGroup className="app-list">
             {elements}
-        </ul>
+        </ListGroup>
     )
 }
 
