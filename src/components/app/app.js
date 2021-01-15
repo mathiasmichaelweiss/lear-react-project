@@ -23,20 +23,24 @@ const StyledAppBlock = styled(AppBlock)`
     background-color: grey;
 `
 
-
-
 export default class App extends Component {
     constructor(props) {
         super(props);
         this.state = {
             data: [
-                { label: 'Goin to learn React', important: true, id: 1 },
-                { label: 'That is good', important: false, id: 2 },
-                { label: 'I need a break...', important: false, id: 3 }
-            ]
+                { label: 'Goin to learn React', important: false, like: false, id: 1 },
+                { label: 'That is good', important: false, like: false, id: 2 },
+                { label: 'I need a break...', important: false, like: false, id: 3 }
+            ],
+            term: '',
+            filter: 'all'
         };
         this.deleteItem = this.deleteItem.bind(this);
         this.addItem = this.addItem.bind(this);
+        this.onToggleImportant = this.onToggleImportant.bind(this);
+        this.onToggleLiked = this.onToggleLiked.bind(this);
+        this.onUpdateSearch = this.onUpdateSearch.bind(this);
+        this.onFilterSelect = this.onFilterSelect.bind(this);
     }
 
     deleteItem(id) {
@@ -50,6 +54,7 @@ export default class App extends Component {
             }
         });
     }
+
     addItem(body) {
         const newItem = {
             label: body,
@@ -64,16 +69,90 @@ export default class App extends Component {
         });
     }
 
+    onToggleImportant(id) {
+        this.setState(({ data }) => {
+            const index = data.findIndex(elem => elem.id === id);
+
+            const old = data[index];
+            const newItem = { ...old, important: !old.important };
+
+            const newArr = [...data.slice(0, index), newItem, ...data.slice(index + 1)];
+            return {
+                data: newArr
+            }
+        });
+    }
+
+    onToggleLiked(id) {
+        /* Это самый сложный момент в Reacte в нем надо разобраться, тогда все остальное будет казаться простым (то как менять state через setState правильно)*/
+        this.setState(({ data }) => {
+            const index = data.findIndex(elem => elem.id === id);
+
+            const old = data[index];
+            const newItem = { ...old, like: !old.like }; /* ...old добавляется в новый объект а все что после запятой это дополнительные данные которые мы можем так же поместить в новый объект (like: !old.like означает, что мы берем старый массив и меняем значение ключа like на противоположное, то есть folse на true и наоборот)*/
+
+            const newArr = [...data.slice(0, index), newItem, ...data.slice(index + 1)]; /* вставляем новый объккт по центру , так как старый мы вырезали при помощи метода slise и мы вставили как раз на его место новый лайк с противоположных boolean значением*/
+            return {
+                data: newArr
+            }
+        });
+    }
+
+    searchPost(items, term) {
+        if (term.length === 0) {
+            return items
+            /* если пользователь ничего не ввел, то мы получим все посты */
+        }
+
+        return items.filter((item) => {
+            return item.label.indexOf(term) > -1
+            /* этим свойством мы будем находить все, что ввел пользователь, если мы этого не найдем то получим -1, а нас интересуют все посты больше -1 */
+        });
+    }
+
+    filterPost(items, filter) {
+        if (filter === 'like') {
+            return items.filter(item => item.like)
+        } else {
+            return items
+        }
+    }
+
+
+    onUpdateSearch(term) {
+        this.setState({ term });
+    }
+
+    onFilterSelect(filter) {
+        this.setState({ filter });
+    }
+
     render() {
+        const { data, term, filter } = this.state;
+        /* отфильтровать все элементы у которых like стоит в true */
+        const liked = data.filter(item => item.like).length,
+            allPosts = data.length;
+
+        const visiblePosts = this.filterPost(this.searchPost(data, term), filter);
+
+
         return (
             <AppBlock>
-                <AppHeader />
+                <AppHeader
+                    liked={liked}
+                    allPosts={allPosts} />
                 <div className="search-panel d-flex">
-                    <SearchPanel />
-                    <PostStatusFilter />
+                    <SearchPanel
+                        onUpdateSearch={this.onUpdateSearch} />
+                    <PostStatusFilter
+                        filter={filter}
+                        onFilterSelect={this.onFilterSelect} />
                 </div>
-                <PostList posts={this.state.data}
+                <PostList
+                    posts={visiblePosts}
                     onDelete={this.deleteItem}
+                    onToggleImportant={this.onToggleImportant}
+                    onToggleLiked={this.onToggleLiked}
                 />
                 <PostAddForm
                     onAdd={this.addItem}
